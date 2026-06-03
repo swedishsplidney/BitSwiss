@@ -27,9 +27,25 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(imgui)
 
-# define executable and source files
-add_executable(${PROJECT_NAME} src/main.cpp
-        src/main.cpp)
+# core source files that are identical between OS
+set(SOURCES
+        src/main.cpp
+        src/StorageManager.hpp
+)
+
+# conditional source mappings based on the OS
+if(WIN32)
+    list(APPEND SOURCES src/StorageManager_Windows.cpp)
+    message(STATUS "configuring build for Windows...")
+elseif(APPLE)
+    list(APPEND SOURCES src/StorageManager_Mac.cpp)
+    message(STATUS "configuring build for macOS")
+elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    list(APPEND SOURCES src/StorageManager_Linux.cpp)
+    message(STATUS "configuring build for Linux")
+endif()
+
+add_executable(${PROJECT_NAME} ${SOURCES})
 
 # add imgui source files manually
 target_sources(${PROJECT_NAME} PRIVATE
