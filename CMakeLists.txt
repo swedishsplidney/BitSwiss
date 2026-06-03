@@ -31,6 +31,7 @@ FetchContent_MakeAvailable(imgui)
 set(SOURCES
         src/main.cpp
         src/StorageManager.hpp
+        src/PackageManager.hpp
 )
 
 # conditional source mappings based on the OS
