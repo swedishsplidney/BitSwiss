@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <GLFW/glfw3.h>
 #include "StorageManager.hpp"
+#include "PackageManager.hpp"
 
 static void glfw_error_callback(int error, const char* description) {
     fprintf(stderr, "Glfw Error %d: %s\n", error, description);
@@ -65,24 +66,102 @@ int main(int, char**) {
         {
             ImGui::Begin("BitSwiss generator control panel");
 
-            //scan hardware every frame cycle
+            // persistent static manifest and state parameters
+            static std::vector<Category> categories = PackageManager::GetDefaultManifest();
+            static int selected_drive_idx = 0;
+
+            // scan hardware devices
             std::vector<DriveInfo> drives = StorageManager::GetTargetDrives();
 
-            ImGui::Text("connected target devices: %d", (int)drives.size());
-            ImGui::Separator();
+            // tracking drop-down/selection
+            ImGui::Text("1. destination vector");
+            std::vector<std::string> drive_previews;
+            for (const auto& d : drives) {
+                double gb = (double)d.total_bytes / (1024.0 * 1024.0 * 1024.0);
+                drive_previews.push_back(d.device_path + " (" + d.model_name + ") [" + std::to_string((int)gb) + " GB]");
+            }
 
             if (drives.empty()) {
-                ImGui::TextColored(ImVec4(1.0f, 0.4f, 0.4f, 1.0f), "searching for removable devices...");
+                ImGui::BeginDisabled();
+                std::string placeholder = "no compatible devices detected :(";
+                ImGui::Combo("target disk", &selected_drive_idx, placeholder.c_str());
+                ImGui::EndDisabled();
             } else {
-                for (size_t i = 0; i < drives.size(); i++) {
-                    double gigabytes = (double)drives[i].total_bytes / (1024.0 * 1024.0 * 1024.0);
-                    ImGui::BulletText("%s (%s) - %.2f GB",
-                        drives[i].device_path.c_str(),
-                        drives[i].model_name.c_str(),
-                        gigabytes
-                    );
+                if (selected_drive_idx >= (int)drives.size()) selected_drive_idx = 0;
+
+                // custom combo builder array processing loop
+                std::vector<const char*> combo_items;
+                for (const auto& s : drive_previews) combo_items.push_back(s.c_str());
+                ImGui::Combo("target disk", &selected_drive_idx, combo_items.data(), (int)combo_items.size());
+            }
+
+            ImGui::Separator();
+
+            // accumulative data size math
+            uint64_t total_selected_bytes = 0;
+            for (const auto& cat : categories) {
+                for (const auto& pkg : cat.packages) {
+                    if (pkg.is_selected) total_selected_bytes += pkg.size_in_bytes;
                 }
             }
+
+            uint64_t drive_capacity_bytes = drives.empty() ? 0 : drives[selected_drive_idx].total_bytes;
+            float allocation_fraction = drive_capacity_bytes == 0 ? 0.0f : (float)total_selected_bytes / (float)drive_capacity_bytes;
+
+            ImGui::Text("2. target allocation graph");
+
+            // flash red if chosen data exceeds available storage
+            bool is_overloaded = total_selected_bytes > drive_capacity_bytes && drive_capacity_bytes > 0;
+            if (is_overloaded) {
+                ImGui::PushStyleColor(ImGuiCol_PlotHistogram, ImVec4(0.9f, 0.2f, 0.2f, 1.0f));
+            } else {
+                ImGui::PushStyleColor(ImGuiCol_PlotHistogram, ImVec4(0.2f, 0.6f, 0.9f, 1.0f)); // cyan blue
+            }
+
+            char progress_buf[64];
+            snprintf(progress_buf, sizeof(progress_buf), "%.1f MB / %.1f GB Allocated",
+                (double)total_selected_bytes / (1024.0 * 1024.0),
+                (double)drive_capacity_bytes / (1024.0 * 1024.0 * 1024.0));
+
+            ImGui::ProgressBar(allocation_fraction, ImVec2(-1.0f, 0.0f), progress_buf);
+            ImGui::PopStyleColor();
+
+            ImGui::Separator();
+
+            // render dynamic category blocks
+            ImGui::Text("3. modular payloads");
+            for (auto& cat : categories) {
+                if (ImGui::CollapsingHeader(cat.name.c_str())) {
+                    ImGui::Indent();
+                    for (auto& pkg : cat.packages) {
+                        double pkg_mb = (double)pkg.size_in_bytes / (1024.0 * 1024.0);
+
+                        char label_buf[128];
+                        snprintf(label_buf, sizeof(label_buf), "%s (%.1f MB)##%s",
+                            pkg.name.c_str(),
+                            pkg_mb,
+                            pkg.name.c_str());
+
+                        ImGui::Checkbox(label_buf, &pkg.is_selected);
+
+                        ImGui::SameLine();
+                        ImGui::TextDisabled("- %s", pkg.description.c_str());
+                    }
+                    ImGui::Unindent();
+                }
+            }
+
+            ImGui::Separator();
+
+            // safe provision activation lockouts
+            bool disable_compile_btn = drives.empty() || is_overloaded || total_selected_bytes == 0;
+            if (disable_compile_btn) ImGui::BeginDisabled();
+
+            if (ImGui::Button("forge station payload", ImVec2(-1.0f, 40.0f))) {
+                // this will be phase 3 target module thread
+            }
+
+            if (disable_compile_btn) ImGui::EndDisabled();
 
             ImGui::End();
         }
