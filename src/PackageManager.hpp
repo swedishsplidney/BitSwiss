@@ -72,7 +72,7 @@ public:
         curl_easy_setopt(curl, CURLOPT_NOBODY, 1L);          // headers only, do not download the body
         curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, HeaderCallback); // assign header loop callback
         curl_easy_setopt(curl, CURLOPT_HEADERDATA, &fetched_size);      // pass reference pointer to store data
-        curl_easy_setopt(curl, CURLOPT_TIMEOUT, 5L);        // 5-second timeout window
+        curl_easy_setopt(curl, CURLOPT_TIMEOUT, 10L);        // 10-second timeout window
         curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L); // follow redirects
 
         // execute the native network request inside our own thread context
@@ -97,15 +97,30 @@ public:
             all_keys.push_back(pair.first);
         }
 
-        for (const std::string& key : all_keys) {
-            std::string url = master_db[key].download_url;
-            std::cout << " -> querying live headers via libcurl: " << master_db[key].name << std::endl;
+        // vector to keep track of concurrent worker threads
+        std::vector<std::thread> workers;
 
-            // run the pure c++ network extraction
-            master_db[key].size_in_bytes = FetchRemoteSize(url, key);
+        for (const std::string& key : all_keys) {
+            // spawn a dedicated thread for each lookup
+            workers.push_back(std::thread([this, key]() {
+                std::string  url = this->master_db[key].download_url;
+
+                // fetch the live size from the server
+                uint64_t fetched_size = FetchRemoteSize(url, key);
+
+                // write the result
+                this->master_db[key].size_in_bytes = fetched_size;
+            }));
         }
 
-        std::cout << "file sizes synchronized successfully!" << std::endl;
+        // wait for all threads to finish
+        for (auto& worker : workers) {
+            if (worker.joinable()) {
+                worker.join();
+            }
+        }
+
+        std::cout << "finished file size synchronization!" << std::endl;
     }
 
 private:
@@ -164,7 +179,7 @@ private:
     void InitializeProfiles() {
         // preconfigured profiles setup here
         profiles.push_back({"general information: small", "perfect for smaller (~16gb) drives includes basic information", {"wiki_en_mini", "gutenberg_medi"}});
-        profiles.push_back({"general information: medium", "contains more information than small, better for ~64gb drives", {"wiki_en_nopic", "gutenberg-medi", "ifixit"}});
-        profiles.push_back({"general information: large", "for drives more than 128gb. will have lots of info.", {"wiki_en_nopic", "gutenberg_medi", "gutenberg_sci", "gutenberg_tech", "ifixit", "stackexchange_academ", "stackexchange_stars", "stackexchange_planes", "stackexchange_bio", "stackexchange_chem", "stackexchange_cs", "stackexchange_elect", "stackexchange_law", "stackexchange_math", "stackexchange_liter"}});
+        profiles.push_back({"general information: medium", "contains a medium amount of info, better for ~64gb drives. will have space to choose a few stackexchange archives", {"wiki_en_nopic", "gutenberg-medi", "ifixit"}});
+        profiles.push_back({"general information: large", "for drives more than 128gb. will have lots of info. will have space to choose a few stackexchange archives", {"wiki_en_nopic", "gutenberg_medi", "gutenberg_sci", "gutenberg_tech", "ifixit", "stackexchange_academ", "stackexchange_stars", "stackexchange_planes", "stackexchange_bio", "stackexchange_chem", "stackexchange_cs", "stackexchange_elect", "stackexchange_law", "stackexchange_math", "stackexchange_liter"}});
     }
 };
