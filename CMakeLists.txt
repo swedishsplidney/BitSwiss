@@ -4,6 +4,8 @@ project(BitSwiss CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+find_package(CURL REQUIRED)
+
 # fetch dependencies automatically
 
 include(FetchContent)
@@ -65,6 +67,10 @@ target_include_directories(${PROJECT_NAME} PRIVATE
         ${imgui_SOURCE_DIR}
         ${imgui_SOURCE_DIR}/backends
 )
+
+target_include_directories(${PROJECT_NAME} PRIVATE ${CURL_INCLUDE_DIRS})
+
+target_link_libraries(${PROJECT_NAME} PRIVATE CURL::libcurl)
 
 # link opengl and system libraries
 find_package(OpenGL REQUIRED)

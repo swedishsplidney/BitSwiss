@@ -6,6 +6,9 @@
 #include <iostream>
 #include <future>
 #include <chrono>
+#include <sstream>
+#include <cctype>
+#include <curl/curl.h>
 
 // core data structure
 struct Package {
@@ -38,41 +41,71 @@ public:
     std::map<std::string, Package>& GetMasterDB() { return master_db; }
     std::vector<PreconfigProfile>& GetProfiles() { return profiles; }
 
-    // live fetching engine
-    // simulates and http head request payload check
-    static uint64_t FetchRemoteSize(const std::string& url, const std::string& id) {
-        // fallback hardcoded estimate sizes
-        if (id.find("wiki") != std::string::npos) {
-            if (id.find("large") != std::string::npos || id.find("maxi") != std::string::npos) return 115ULL * 1024 * 1024 * 1024;
-            if (id.find("medium") != std::string::npos || id.find("nopic") != std::string::npos) return 48ULL * 1024 * 1024 * 1024;
-            return 12ULL * 1024 * 1024 * 1024; // mini
-        }
-        if (id.find("stackoverflow") != std::string::npos) return 74ULL * 1024 * 1024 * 1024;
-        if (id.find("gutenberg") != std::string::npos) return 72ULL * 1024 * 1024 * 1024;
-        if (id.find("ifixit") != std::string::npos) return 4ULL * 1024 * 1024 * 1024;
-        if (id.find("stackexchange") != std::string::npos) return 7ULL * 1024 * 1024 * 1024;
+    // callback function to read incoming HTTP header strings line by line
+    static size_t HeaderCallback(char* buffer, size_t size, size_t nitems, void* userdata) {
+        size_t num_bytes = size * nitems;
+        std::string header_line(buffer, num_bytes);
+        uint64_t* final_size = static_cast<uint64_t*>(userdata);
 
-        return 1ULL * 1024 * 1024 * 1024; // global fallback 1gb
+        // parse out the content-length line
+        if (header_line.rfind("Content-Length:", 0) == 0 || header_line.rfind("content-length:", 0) == 0) {
+            std::stringstream ss;
+            for (char c : header_line) {
+                if (std::isdigit(c)) ss << c;
+            }
+            ss >> *final_size;
+        }
+        return num_bytes;
     }
 
-    // spawns asynchronous worker threads to ping sizes in parallel
-    // prevents main ImGui loop from freezing at startup
+    // memory safe live size fetcher using libcurl
+    static uint64_t FetchRemoteSize(const std::string& url, const std::string& id) {
+        if (url.empty()) return 0;
+
+        CURL* curl = curl_easy_init();
+        if (!curl) return 0;
+
+        uint64_t fetched_size = 0;
+
+        // configure the libcurl ez handle
+        curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+        curl_easy_setopt(curl, CURLOPT_NOBODY, 1L);          // headers only, do not download the body
+        curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, HeaderCallback); // assign header loop callback
+        curl_easy_setopt(curl, CURLOPT_HEADERDATA, &fetched_size);      // pass reference pointer to store data
+        curl_easy_setopt(curl, CURLOPT_TIMEOUT, 5L);        // 5-second timeout window
+        curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L); // follow redirects
+
+        // execute the native network request inside our own thread context
+        CURLcode res = curl_easy_perform(curl);
+
+        if (res != CURLE_OK) {
+            std::cerr << "failed to ping " << id << " -> " << curl_easy_strerror(res) << std::endl;
+            // fallback value if server doesn't respond during launch
+            fetched_size = 1ULL * 1024 * 1024 * 1024; // 1gb
+        }
+
+        curl_easy_cleanup(curl);
+        return fetched_size;
+    }
+
     void UpdateManifestSizesAsync() {
-        std::vector<std::future<void>> futures;
+        std::cout << "initializing libcurl file size framework..." << std::endl;
 
-        for (auto it = master_db.begin(); it != master_db.end(); ++it) {
-            std::string current_id = it->first;
-            Package* pkg_ptr = &(it->second);
-
-            futures.push_back(std::async(std::launch::async, [pkg_ptr, current_id]() mutable {
-                pkg_ptr->size_in_bytes = FetchRemoteSize(pkg_ptr->download_url, current_id);
-            }));
+        // isolate map iterators safely from the sequential loop positions
+        std::vector<std::string> all_keys;
+        for (const auto& pair : master_db) {
+            all_keys.push_back(pair.first);
         }
 
-        // wait for all threads to finish
-        for (auto& f : futures) {
-            f.wait();
+        for (const std::string& key : all_keys) {
+            std::string url = master_db[key].download_url;
+            std::cout << " -> querying live headers via libcurl: " << master_db[key].name << std::endl;
+
+            // run the pure c++ network extraction
+            master_db[key].size_in_bytes = FetchRemoteSize(url, key);
         }
+
+        std::cout << "file sizes synchronized successfully!" << std::endl;
     }
 
 private:
