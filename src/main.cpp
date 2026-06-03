@@ -3,6 +3,7 @@
 #include "imgui_impl_opengl3.h"
 #include <stdio.h>
 #include <GLFW/glfw3.h>
+#include "StorageManager.hpp"
 
 static void glfw_error_callback(int error, const char* description) {
     fprintf(stderr, "Glfw Error %d: %s\n", error, description);
@@ -60,15 +61,29 @@ int main(int, char**) {
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
 
-        // show the demo window
-        if (show_demo_window)
-            ImGui::ShowDemoWindow(&show_demo_window);
-
         // custom app window
         {
-            ImGui::Begin("generator control panel");
-            ImGui::Text("welcome to the BitSwiss USB setup tool!");
-            ImGui::Checkbox("show imgui demo window", &show_demo_window);
+            ImGui::Begin("BitSwiss generator control panel");
+
+            //scan hardware every frame cycle
+            std::vector<DriveInfo> drives = StorageManager::GetTargetDrives();
+
+            ImGui::Text("connected target devices: %d", (int)drives.size());
+            ImGui::Separator();
+
+            if (drives.empty()) {
+                ImGui::TextColored(ImVec4(1.0f, 0.4f, 0.4f, 1.0f), "searching for removable devices...");
+            } else {
+                for (size_t i = 0; i < drives.size(); i++) {
+                    double gigabytes = (double)drives[i].total_bytes / (1024.0 * 1024.0 * 1024.0);
+                    ImGui::BulletText("%s (%s) - %.2f GB",
+                        drives[i].device_path.c_str(),
+                        drives[i].model_name.c_str(),
+                        gigabytes
+                    );
+                }
+            }
+
             ImGui::End();
         }
 
