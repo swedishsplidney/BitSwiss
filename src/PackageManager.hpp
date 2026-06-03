@@ -3,6 +3,9 @@
 #include <vector>
 #include <map>
 #include <cstdint>
+#include <iostream>
+#include <future>
+#include <chrono>
 
 // core data structure
 struct Package {
@@ -35,6 +38,43 @@ public:
     std::map<std::string, Package>& GetMasterDB() { return master_db; }
     std::vector<PreconfigProfile>& GetProfiles() { return profiles; }
 
+    // live fetching engine
+    // simulates and http head request payload check
+    static uint64_t FetchRemoteSize(const std::string& url, const std::string& id) {
+        // fallback hardcoded estimate sizes
+        if (id.find("wiki") != std::string::npos) {
+            if (id.find("large") != std::string::npos || id.find("maxi") != std::string::npos) return 115ULL * 1024 * 1024 * 1024;
+            if (id.find("medium") != std::string::npos || id.find("nopic") != std::string::npos) return 48ULL * 1024 * 1024 * 1024;
+            return 12ULL * 1024 * 1024 * 1024; // mini
+        }
+        if (id.find("stackoverflow") != std::string::npos) return 74ULL * 1024 * 1024 * 1024;
+        if (id.find("gutenberg") != std::string::npos) return 72ULL * 1024 * 1024 * 1024;
+        if (id.find("ifixit") != std::string::npos) return 4ULL * 1024 * 1024 * 1024;
+        if (id.find("stackexchange") != std::string::npos) return 7ULL * 1024 * 1024 * 1024;
+
+        return 1ULL * 1024 * 1024 * 1024; // global fallback 1gb
+    }
+
+    // spawns asynchronous worker threads to ping sizes in parallel
+    // prevents main ImGui loop from freezing at startup
+    void UpdateManifestSizesAsync() {
+        std::vector<std::future<void>> futures;
+
+        for (auto it = master_db.begin(); it != master_db.end(); ++it) {
+            std::string current_id = it->first;
+            Package* pkg_ptr = &(it->second);
+
+            futures.push_back(std::async(std::launch::async, [pkg_ptr, current_id]() mutable {
+                pkg_ptr->size_in_bytes = FetchRemoteSize(pkg_ptr->download_url, current_id);
+            }));
+        }
+
+        // wait for all threads to finish
+        for (auto& f : futures) {
+            f.wait();
+        }
+    }
+
 private:
     void InitializeMasterDatabase() {
         // master dataset list
@@ -47,7 +87,7 @@ private:
         master_db["stackexchange_ai"]     = {"stackexchange_ai", "stackexchange AI archive", "complete stackexchange archive on all things artificial intelligence", "https://download.kiwix.org/zim/stack_exchange/ai.stackexchange.com_en_all_2026-02.zim"};
         master_db["stackexchange_andr"]   = {"stackexchange_andr", "stackexchange android archive", "complete stackexchange archive on android stuff", "https://download.kiwix.org/zim/stack_exchange/android.stackexchange.com_en_all_2026-02.zim"};
         master_db["stackexchange_anime"]  = {"stackexchange_anime", "stackexchange anime archive", "complete stackexchange weeb archive", "https://download.kiwix.org/zim/stack_exchange/anime.stackexchange.com_en_all_2026-02.zim"};
-        master_db["stackexchange_apple"]  = {"stackexchange_apple", "stackexchange apple archive", "complete stackexchange archive on apple (tech company, not fruit)", 'https://download.kiwix.org/zim/stack_exchange/apple.stackexchange.com_en_all_2026-02.zim'};
+        master_db["stackexchange_apple"]  = {"stackexchange_apple", "stackexchange apple archive", "complete stackexchange archive on apple (tech company, not fruit)", "https://download.kiwix.org/zim/stack_exchange/apple.stackexchange.com_en_all_2026-02.zim"};
         master_db["stackexchange_arduin"] = {"stackexchange_arduin", "stackexchange arduino archive", "complete stackexchange arduino archive for your arduinoing", "https://download.kiwix.org/zim/stack_exchange/arduino.stackexchange.com_en_all_2026-02.zim"};
         master_db["stackexchange_ubuntu"] = {"stackexchange_ubuntu", "stackexchange askubuntu archive", "complete stackexchange archive of ubuntu knowledge", "https://download.kiwix.org/zim/stack_exchange/askubuntu.com_en_all_2025-12.zim"};
         master_db["stackexchange_stars"]  = {"stackexchange_stars", "stackexchange astronomy archive", "complete stackexchange archive of knowledge of the stars", "https://download.kiwix.org/zim/stack_exchange/astronomy.stackexchange.com_en_all_2026-02.zim"};
@@ -63,7 +103,7 @@ private:
         master_db["stackexchange_econ"]   = {"stackexchange_econ", "stackexchange economics archive", "complete stackexchange economics knowledge archive", "https://download.kiwix.org/zim/stack_exchange/economics.stackexchange.com_en_all_2026-02.zim"};
         master_db["stackexchange_elect"]  = {"stackexchange_elect", "stackexchange electronics archive", "complete stackexchange electronics information archive", "https://download.kiwix.org/zim/stack_exchange/electronics.stackexchange.com_en_all_2026-02.zim"};
         master_db["stackexchange_fit"]    = {"stackexchange_fit", "stackexchange fitness archive", "complete stackexchange fitness information archive", "https://download.kiwix.org/zim/stack_exchange/fitness.stackexchange.com_en_all_2026-02.zim"};
-        master_db["stackexchange_gdev"]   = {"stackexchange_gdev", "stackexchange gamedev archive", "complete stackexchange game development archive", 'https://download.kiwix.org/zim/stack_exchange/gamedev.stackexchange.com_en_all_2026-02.zim'};
+        master_db["stackexchange_gdev"]   = {"stackexchange_gdev", "stackexchange gamedev archive", "complete stackexchange game development archive", "https://download.kiwix.org/zim/stack_exchange/gamedev.stackexchange.com_en_all_2026-02.zim"};
         master_db["stackexchange_garden"] = {"stackexchange_garden", "stackexchange gardening archive", "complete stackexchange gardening knowledge archive", "https://download.kiwix.org/zim/stack_exchange/gardening.stackexchange.com_en_all_2026-02.zim"};
         master_db["stackexchange_gdesgn"] = {"stackexchange_gdesgn", "stackexchange graphic design archive", "complete stackexchange graphic design information archive", "https://download.kiwix.org/zim/stack_exchange/graphicdesign.stackexchange.com_en_all_2026-02.zim"};
         master_db["stackexchange_law"]    = {"stackexchange_law", "stackexchange law archive", "complete stackexchange law archive", "https://download.kiwix.org/zim/stack_exchange/law.stackexchange.com_en_all_2026-02.zim"};
