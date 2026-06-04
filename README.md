@@ -78,7 +78,7 @@ cmake --build .
 
 ## ai usage disclosure
 
-no generative ai or LLMs were used to write or debug any code or headers or documentation.
+no generative ai or LLMs were used to write or debug any code, headers, or documentation.
 
 ---
 
