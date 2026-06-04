@@ -35,6 +35,7 @@ set(SOURCES
         src/StorageManager.hpp
         src/PackageManager.hpp
         src/ThemeManager.hpp
+        src/StorageWriter.hpp
 )
 
 # conditional source mappings based on the OS
