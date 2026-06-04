@@ -65,7 +65,11 @@ int main(int, char**) {
 
         // custom app window
         {
+            ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 1.0f, 1.0f));
+
             ImGui::Begin("BitSwiss generator control panel");
+
+            ImGui::PopStyleColor();
 
             static int current_theme_idx = THEME_DARK_WIN95;
             static bool initialization_frame = true;
