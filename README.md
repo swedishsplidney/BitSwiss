@@ -1,8 +1,9 @@
 # **BitSwiss**
 
-<img src="https://shields.io" alt="CMake">
-<img src="https://shields.io" alt="Dear ImGui">
-<img src="https://shields.io" alt="curl">
+![CMake](https://shields.io)
+![Dear ImGui](https://shields.io)
+![curl](https://shields.io)
+
 
 a lightweight, cross-platform, open source C++/Dear ImGui utility to curate, download, and provision massive offline archives.
 
