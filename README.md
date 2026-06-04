@@ -1,7 +1,5 @@
 # **BitSwiss**
 
-![image]({https://img.shields.io/badge/CMake-064F8C?style=for-the-badge&logo=cmake&logoColor=white})
-
 a lightweight, cross-platform, open source C++/Dear ImGui utility to curate, download, and provision massive offline archives.
 
 this tool allows users to select from a massive ledger of distinct historical, scientific and technical archives,
