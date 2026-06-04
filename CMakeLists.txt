@@ -37,6 +37,8 @@ set(SOURCES
         src/ThemeManager.hpp
         src/StorageWriter.hpp
         src/StorageWriter.cpp
+        src/DownloadManager.hpp
+        src/DownloadManager.cpp
 )
 
 # conditional source mappings based on the OS

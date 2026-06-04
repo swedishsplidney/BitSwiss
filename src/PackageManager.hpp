@@ -9,6 +9,8 @@
 #include <sstream>
 #include <cctype>
 #include <curl/curl.h>
+#include <atomic>
+#include <memory>
 
 // core data structure
 struct Package {
@@ -18,6 +20,10 @@ struct Package {
     std::string download_url;   // location of download
     uint64_t size_in_bytes;     // real allocation metrics
     bool is_selected = false;   //globally tracked state
+
+    std::shared_ptr<std::atomic<double>> download_progress = std::make_shared<std::atomic<double>>(0.0);
+    std::shared_ptr<std::atomic<bool>> is_downloading = std::make_shared<std::atomic<bool>>(false);
+    std::shared_ptr<std::atomic<bool>> is_completed = std::make_shared<std::atomic<bool>>(false);
 };
 
 // preconfig data struct
@@ -26,6 +32,8 @@ struct PreconfigProfile {
     std::string description;
     std::vector<std::string> package_ids;
 };
+
+
 
 class PackageManager {
 private:
