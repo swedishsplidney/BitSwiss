@@ -3,6 +3,8 @@
 #include "imgui_impl_opengl3.h"
 #include <stdio.h>
 #include <GLFW/glfw3.h>
+
+#include "DownloadManager.hpp"
 #include "StorageManager.hpp"
 #include "PackageManager.hpp"
 #include "StorageWriter.hpp"
@@ -56,7 +58,6 @@ int main(int, char**) {
     ImVec4 clear_color = ImVec4(0.15f, 0.16f, 0.21f, 1.00f); // bg
 
     // main loop
-    // main loop
     while (!glfwWindowShouldClose(window)) {
         glfwPollEvents();
 
@@ -76,6 +77,8 @@ int main(int, char**) {
             static int current_theme_idx = THEME_DARK_WIN95;
             static bool initialization_frame = true;
             static PackageManager pm;
+            static StorageManager sm;
+            static DownloadManager dm;
             static int selected_drive_idx = 0;
             static bool sizes_synced = false;
 
@@ -181,6 +184,25 @@ int main(int, char**) {
                     ImGui::Checkbox(label_buf, &pkg.is_selected);
                     ImGui::SameLine();
                     ImGui::TextDisabled("| %s", pkg.description.c_str());
+
+                    // dl progress bar
+                    if (pkg.is_downloading->load()) {
+                        double current_progress = pkg.download_progress->load();
+
+                        // format text inside loading bar
+                        char progress_text[32];
+                        snprintf(progress_text, sizeof(progress_text), "downloading... %.1f%%", current_progress);
+
+                        // render the progress bar
+                        ImGui::ProgressBar(static_cast<float>(current_progress / 100.0), ImVec2(-1.0f, 0.0f), progress_text);
+                    }
+                    else if (pkg.is_completed->load()) {
+                        // renders a solid green "finished" indicator
+                        ImGui::PushStyleColor(ImGuiCol_PlotHistogram, ImVec4(0.0f, 0.8f, 0.3f, 1.0f));
+                        ImGui::ProgressBar(1.0f, ImVec2(-1.0f, 0.0f), "completed!");
+                        ImGui::PopStyleColor();
+                    }
+                    ImGui::Separator();
                 }
                 ImGui::EndChild();
             }
@@ -232,15 +254,9 @@ int main(int, char**) {
                 // 2. safely get the mount target string path
                 std::string active_target_mount = drives[selected_drive_idx].device_path;
 
-                // 3. send writing sequence
-                WriteResult write_status = StorageWriter::WritePackagesToDestination(active_target_mount, packages_to_deploy);
-
-                // send diagnostics to console
-                if (write_status.success) {
-                    std::cout << "successfully initialized " << write_status.bytes_written << " header bytes inside " << active_target_mount << "/BitSwiss_archive" << std::endl;
-                } else {
-                    std::cerr << "directory provisioning failed: " << write_status.error_message << std::endl;
-                }
+                // 3. actual download stuff
+                std::cout << "launching concurrent download pool to " << active_target_mount << std::endl;
+                dm.StartDownloadPool(packages_to_deploy, active_target_mount);
             }
 
             if (disable_btn) ImGui::EndDisabled();

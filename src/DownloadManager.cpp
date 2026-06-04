@@ -30,12 +30,28 @@ void DownloadManager::DownloadWorkerTask(Package pkg, std::string destination_di
     pkg.is_downloading->store(true);
 
     // create the destination file path
-    fs::path target_file = fs::path(destination_directory) / "BitSwiss_archive" / (pkg.id + ".zim");
+    fs::path archive_dir = fs::path(destination_directory) / "BitSwiss_archive";
+
+    try {
+        // force create the dir inside thread
+        if (!fs::exists(archive_dir)) {
+            fs::create_directory(archive_dir);
+        }
+    }
+    catch (const fs::filesystem_error& e) {
+        std::cerr << "thread OS error: cannot create directory: " << e.what() << std::endl;
+        pkg.is_downloading->store(false);
+        return;
+    }
+
+    // reconstruct final target path
+    fs::path target_file = archive_dir / (pkg.id + ".zim");
 
     // open stream in binary append/out mode
     std::ofstream output_stream(target_file, std::ios::binary | std::ios::out | std::ios::trunc);
     if (!output_stream.is_open()) {
-        std::cerr << "thread error: failed to open target file for writing: " << target_file << std::endl;
+        std::cerr << "OS permission error. cannot write to: " << target_file << std::endl;
+        std::cerr << "check if your drive is mounted as read-only!" << std::endl;
         pkg.is_downloading->store(false);
         return;
     }
@@ -43,7 +59,7 @@ void DownloadManager::DownloadWorkerTask(Package pkg, std::string destination_di
     CURL* curl_handle = curl_easy_init();
     if (curl_handle) {
         // mock url endpoint for now, will link later
-        std::string mock_url = "https://dumps.wikipedia.org/other/kiwix/zim/wikipedia/";
+        std::string mock_url = "https://www.myinstants.com/media/sounds/never-gonna-give-u-up.mp3";
 
         curl_easy_setopt(curl_handle, CURLOPT_URL, mock_url.c_str());
 
