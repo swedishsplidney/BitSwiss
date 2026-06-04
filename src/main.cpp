@@ -5,6 +5,7 @@
 #include <GLFW/glfw3.h>
 #include "StorageManager.hpp"
 #include "PackageManager.hpp"
+#include "StorageWriter.hpp"
 #include "ThemeManager.hpp"
 
 static void glfw_error_callback(int error, const char* description) {
@@ -220,7 +221,26 @@ int main(int, char**) {
             if (disable_btn) ImGui::BeginDisabled();
 
             if (ImGui::Button("write to drive", ImVec2(-1.0f, 40.0f))) {
-                // writing implementation goes here
+                // 1. gather all checked packages
+                std::vector<Package> packages_to_deploy;
+                for (const auto& [id, pkg] : pm.GetMasterDB()) {
+                    if (pkg.is_selected) {
+                        packages_to_deploy.push_back(pkg);
+                    }
+                }
+
+                // 2. safely get the mount target string path
+                std::string active_target_mount = drives[selected_drive_idx].device_path;
+
+                // 3. send writing sequence
+                WriteResult write_status = StorageWriter::WritePackagesToDestination(active_target_mount, packages_to_deploy);
+
+                // send diagnostics to console
+                if (write_status.success) {
+                    std::cout << "successfully initialized " << write_status.bytes_written << " header bytes inside " << active_target_mount << "/BitSwiss_archive" << std::endl;
+                } else {
+                    std::cerr << "directory provisioning failed: " << write_status.error_message << std::endl;
+                }
             }
 
             if (disable_btn) ImGui::EndDisabled();
