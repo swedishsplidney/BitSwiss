@@ -55,6 +55,7 @@ int main(int, char**) {
     ImVec4 clear_color = ImVec4(0.15f, 0.16f, 0.21f, 1.00f); // bg
 
     // main loop
+    // main loop
     while (!glfwWindowShouldClose(window)) {
         glfwPollEvents();
 
@@ -194,20 +195,25 @@ int main(int, char**) {
             uint64_t drive_capacity_bytes = drives.empty() ? 0 : drives[selected_drive_idx].total_bytes;
             float allocation_fraction = drive_capacity_bytes == 0 ? 0.0f : (float)total_selected_bytes / (float)drive_capacity_bytes;
 
-            bool is_overloaded =  total_selected_bytes > drive_capacity_bytes && drive_capacity_bytes > 0;
-            if (is_overloaded) {
-                ImGui::PushStyleColor(ImGuiCol_PlotHistogram, ImVec4(0.9f, 0.2f, 0.2f, 1.0f)); // red
-            } else {
-                ImGui::PushStyleColor(ImGuiCol_PlotHistogram, ImVec4(0.2f, 0.6f, 0.9f, 1.0f)); // blue
-            }
-
             char progress_buf[128];
             snprintf(progress_buf, sizeof(progress_buf), "%.2f GB / %.2f GB allocated",
                 (double)total_selected_bytes / (1024.0 * 1024.0 * 1024.0),
                 (double)drive_capacity_bytes / (1024.0 * 1024.0 * 1024.0));
 
+            bool is_overloaded = total_selected_bytes > drive_capacity_bytes && drive_capacity_bytes > 0;
+            ImVec4 final_bar_color;
+
+            if (is_overloaded) {
+                final_bar_color = ImVec4(0.9f, 0.2f, 0.2f, 1.0f);
+            } else {
+                final_bar_color = ImGui::GetStyle().Colors[ImGuiCol_PlotHistogram];
+            }
+
+            ImGui::PushStyleColor(ImGuiCol_PlotHistogram, final_bar_color);
+
             ImGui::ProgressBar(allocation_fraction, ImVec2(-1.0f, 0.0f), progress_buf);
-            ImGui::PopStyleColor();
+
+            ImGui::PopStyleColor(1);
 
             // section 5: write to drive
             bool disable_btn = drives.empty() || is_overloaded || total_selected_bytes == 0;
