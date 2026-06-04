@@ -5,6 +5,7 @@
 #include <GLFW/glfw3.h>
 #include "StorageManager.hpp"
 #include "PackageManager.hpp"
+#include "ThemeManager.hpp"
 
 static void glfw_error_callback(int error, const char* description) {
     fprintf(stderr, "Glfw Error %d: %s\n", error, description);
@@ -66,9 +67,45 @@ int main(int, char**) {
         {
             ImGui::Begin("BitSwiss generator control panel");
 
+            static int current_theme_idx = THEME_DARK_WIN95;
+            static bool initialization_frame = true;
             static PackageManager pm;
             static int selected_drive_idx = 0;
             static bool sizes_synced = false;
+
+            // apply defaults on start
+            if (initialization_frame) {
+                ApplyTheme(current_theme_idx);
+                initialization_frame = false;
+            }
+
+            // settings panel
+            if (ImGui::CollapsingHeader("settings")) {
+                ImGui::Indent();
+                ImGui::Spacing();
+
+                // theme toggle dropdown
+                const char* preview_name = GetThemeName(current_theme_idx);
+                if (ImGui::BeginCombo("theme", preview_name)) {
+                    for (int i = 0; i < THEME_COUNT; i++) {
+                        bool is_selected = (current_theme_idx == i);
+                        if (ImGui::Selectable(GetThemeName(i), is_selected)) {
+                            current_theme_idx = i;
+                            ApplyTheme(current_theme_idx); // instantly apply theme
+                        }
+                        if (is_selected) {
+                            ImGui::SetItemDefaultFocus();
+                        }
+                    }
+                    ImGui::EndCombo();
+                }
+
+                ImGui::TextDisabled("changes the style and theme");
+                ImGui::Spacing();
+                ImGui::Unindent();
+            }
+
+            ImGui::Separator();
 
             // trigger the step 2 network background threads only one time
             if (!sizes_synced) {
