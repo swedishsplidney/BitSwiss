@@ -55,7 +55,7 @@ and have them automatically be downloaded onto any removable storage device.
              target (portable media)
        +---------------------------------+
        |         [===usb drive===]       |
-       | 📂 BitSwiss_archive             |
+       |    BitSwiss_archive             |
        |  ├── data (.zim archives)       |
        |  ├── BitSwiss-Linux             |
        |  ├── BitSwiss.exe (windows)     |
