@@ -5,6 +5,12 @@ on:
     tags:
       - 'v*'
 
+permissions:
+  contents: write
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   build:
     name: Build on ${{ matrix.os }}
@@ -23,7 +29,7 @@ jobs:
         if: matrix.os == 'ubuntu-latest'
         run: |
           sudo apt-get update
-          sudo apt-get install -y cmake libcurl4-openssl-dev libglfw3-dev
+          sudo apt-get install -y cmake libcurl4-openssl-dev libglfw3-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev
 
       # macOS environment Setup
       - name: install macOS dependencies
@@ -31,18 +37,27 @@ jobs:
         run: |
           brew install cmake curl glfw
 
-      # windows environment Setup (VCPKG for easy libcurl management)
+      # windows environment Setup
       - name: install windows dependencies
         if: matrix.os == 'windows-latest'
         run: |
           vcpkg install curl:x64-windows glfw3:x64-windows
 
-      - name: configure CMake
+      # configure CMake (Windows)
+      - name: configure CMake (Windows)
+        if: matrix.os == 'windows-latest'
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake
+
+      # configure CMake (Unix)
+      - name: configure CMake (Unix)
+        if: matrix.os != 'windows-latest'
         run: cmake -B build -DCMAKE_BUILD_TYPE=Release
 
+      # build binary
       - name: build binary
         run: cmake --build build --config Release
 
+      # upload artifacts
       - name: upload artifacts
         uses: softprops/action-gh-release@v2
         with:
