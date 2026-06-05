@@ -209,7 +209,28 @@ int main(int, char**) {
 
             ImGui::Separator();
 
+            // tools category
+            ImGui::Text("4. include portable readers");
+            ImGui::Spacing();
+
+            static bool include_win_reader = false;
+            static bool include_linux_reader = false;
+            static bool include_mac_reader = false;
+
+            ImGui::Checkbox("windows reader (.exe ZIP)", &include_win_reader); ImGui::SameLine(320.0f);
+            ImGui::Checkbox("linux reader (.AppImage)", &include_linux_reader); ImGui::SameLine(640.0f);
+            ImGui::Checkbox("mac reader (.dmg)", &include_mac_reader);
+
+            ImGui::Spacing();
+            ImGui::Separator();
+
             // section 4: real time capacity
+
+            // pre inject tools so the capacity bar calculates them
+            pm.GetMasterDB()["tool_reader_win"].is_selected = include_win_reader;
+            pm.GetMasterDB()["tool_reader_linux"].is_selected = include_linux_reader;
+            pm.GetMasterDB()["tool_reader_mac"].is_selected = include_mac_reader;
+
             uint64_t total_selected_bytes = 0;
             for (const auto& [id, pkg] : pm.GetMasterDB()) {
                 if (pkg.is_selected) total_selected_bytes += pkg.size_in_bytes;
@@ -320,11 +341,18 @@ int main(int, char**) {
                 ImGui::PopStyleColor(3);
             }
             else {
+                bool is_syncing = !pm.IsSizingFinished();
                 bool disable_btn = drives.empty() || is_overloaded || total_selected_bytes == 0;
+
                 if (disable_btn) ImGui::BeginDisabled();
 
-                if (ImGui::Button("write to drive", ImVec2(-1.0f, 40.0f))) {
+                // dynamic button status indicator
+                std::string button_text = is_syncing ? "syncing file extensions..." : "write to drive";
+
+                if (ImGui::Button(button_text.c_str(), ImVec2(-1.0f, 40.0f))) {
                     std::vector<Package*> packages_to_deploy;
+
+                    // add true filenames from URL
                     for (auto& [id, pkg] : pm.GetMasterDB()) {
                         if (pkg.is_selected) packages_to_deploy.push_back(&pkg);
                     }

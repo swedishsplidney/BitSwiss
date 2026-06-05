@@ -59,8 +59,9 @@ void DownloadManager::DownloadWorkerTask(Package* pkg, std::string destination_d
         return;
     }
 
-    // reconstruct final target path
-    fs::path target_file = archive_dir / (pkg->id + ".zim");
+    // reconstruct final target path using dynamic filename
+    std::string filename = pkg->target_filename.empty() ? (pkg->id + ".zim") : pkg->target_filename;
+    fs::path target_file = archive_dir / filename;
 
     // open stream in binary append/out mode
     std::ofstream output_stream(target_file, std::ios::binary | std::ios::out | std::ios::trunc);

@@ -17,5 +17,5 @@ struct WriteResult {
 class StorageWriter {
     // will handle opening the drive, creating directories, and processing packages
 public:
-    static WriteResult WritePackagesToDestination(const std::string& target_path, const std::vector<Package>& selected_packages);
+    static WriteResult WritePackagesToDestination(const std::string& target_path, const std::vector<Package*>& selected_packages);
 };

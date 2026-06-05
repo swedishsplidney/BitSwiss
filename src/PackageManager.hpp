@@ -11,6 +11,8 @@
 #include <curl/curl.h>
 #include <atomic>
 #include <memory>
+#include <thread>
+#include <mutex>
 
 // core data structure
 struct Package {
@@ -20,6 +22,8 @@ struct Package {
     std::string download_url;   // location of download
     uint64_t size_in_bytes;     // real allocation metrics
     bool is_selected = false;   //globally tracked state
+
+    std::string target_filename = "";
 
     std::shared_ptr<std::atomic<double>> download_progress = std::make_shared<std::atomic<double>>(0.0);
     std::shared_ptr<std::atomic<bool>> is_downloading = std::make_shared<std::atomic<bool>>(false);
@@ -39,12 +43,15 @@ class PackageManager {
 private:
     std::map<std::string, Package> master_db;
     std::vector<PreconfigProfile> profiles;
+    std::atomic<bool> sizing_finished{false};
 
 public:
     PackageManager() {
         InitializeMasterDatabase();
         InitializeProfiles();
     }
+
+    bool IsSizingFinished() const { return sizing_finished.load(); }
 
     std::map<std::string, Package>& GetMasterDB() { return master_db; }
     std::vector<PreconfigProfile>& GetProfiles() { return profiles; }
@@ -97,6 +104,7 @@ public:
     }
 
     void UpdateManifestSizesAsync() {
+        sizing_finished.store(false);
         std::cout << "initializing libcurl file size framework..." << std::endl;
 
         // isolate map iterators safely from the sequential loop positions
@@ -115,9 +123,25 @@ public:
 
                 // fetch the live size from the server
                 uint64_t fetched_size = FetchRemoteSize(url, key);
-
                 // write the result
                 this->master_db[key].size_in_bytes = fetched_size;
+
+                // detect file extension by parsing the URL string backwards to get the file name and extension
+                size_t last_slash = url.rfind("/");
+                if (last_slash != std::string::npos) {
+                    std::string raw_filename = url.substr(last_slash + 1);
+
+                    // clean out query strings (if they even exist)
+                    size_t query_idx = raw_filename.rfind("?");
+                    if (query_idx != std::string::npos) {
+                        raw_filename = raw_filename.substr(0, query_idx);
+                    }
+
+                    this->master_db[key].target_filename = raw_filename;
+                } else {
+                    // safety fallback for if the URL does not contain a valid path slash
+                    this->master_db[key].target_filename = key + ".zim";
+                }
             }));
         }
 
@@ -128,11 +152,16 @@ public:
             }
         }
 
+        sizing_finished.store(true);
         std::cout << "finished file size synchronization!" << std::endl;
     }
 
 private:
     void InitializeMasterDatabase() {
+        // readers
+        master_db["tool_reader_linux"]    = {"tool_reader_linux", "kiwix reader for linux (.AppImage)", "portable self-contained runtime file. can be used to read all the .zim files here fully offline on linux", "https://download.kiwix.org/release/kiwix-desktop/kiwix-desktop_x86_64_2.4.1.appimage"};
+        master_db["tool_reader_win"]      = {"tool_reader_win", "kiwix reader for Windows (.exe ZIP)", "standalone .zim reader tool. runs out of the box on Windows devices without setup", "https://download.kiwix.org/release/kiwix-desktop/kiwix-desktop_windows_x64.zip"};
+        master_db["tool_reader_mac"]      = {"tool_reader_mac", "kiwix reader for macOS (.dmg)", "apple disk image bundle containing an offline .zim reading application", "https://download.kiwix.org/release/kiwix-macos/kiwix-macos.dmg"};
         // master dataset list
         master_db["wiki_en_all"]          = {"wiki_en_all", "wikipedia english (full)", "the entire english wikipedia with images and tables.", "https://download.kiwix.org/zim/wikipedia/wikipedia_en_all_maxi_2026-02.zim"};
         master_db["wiki_en_nopic"]        = {"wiki_en_nopic", "wikipedia english (text only)", "complete text articles with 0 images for space efficiency.", "https://download.kiwix.org/zim/wikipedia/wikipedia_en_all_nopic_2026-03.zim"};
