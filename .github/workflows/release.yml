@@ -5,19 +5,19 @@ on:
     tags:
       - 'v*'
 
-# 🔐 Grants explicit write access so the automated runner can attach files to your Release dashboard
+# grants explicit write access so the automated runner can attach files to Release dashboard
 permissions:
   contents: write
 
 env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true # Quiet down Node runner deprecation warnings
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   build:
     name: build on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
-      fail-fast: false # Keeps other OS jobs running even if one hits a snag
+      fail-fast: false # keeps other OS jobs running even if one fails
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
 
@@ -25,20 +25,20 @@ jobs:
       - name: checkout code
         uses: actions/checkout@v4
 
-      # 🐧 Linux Environment Setup
+      # linux Environment Setup
       - name: install linux dependencies
         if: matrix.os == 'ubuntu-latest'
         run: |
           sudo apt-get update
           sudo apt-get install -y cmake libcurl4-openssl-dev libglfw3-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libxkbcommon-dev
 
-      # 🍏 macOS Environment Setup
+      # macOS Environment Setup
       - name: install macOS dependencies
         if: matrix.os == 'macos-latest'
         run: |
           brew install cmake curl glfw
 
-      # 🪟 Windows Environment Setup
+      # windows Environment Setup
       - name: install windows dependencies
         if: matrix.os == 'windows-latest'
         run: |
@@ -58,20 +58,20 @@ jobs:
       - name: build binary
         run: cmake --build build --config Release
 
-      # 🍏 macOS specific step: Compress the app bundle directory layout into a single flashable archive
+      # macOS specific step
       - name: compress macOS app bundle
         if: matrix.os == 'macos-latest'
         run: |
           cd build
           zip -r BitSwiss-macOS.zip BitSwiss.app || zip -r BitSwiss-macOS.zip BitSwiss
 
-      # 🐧 Linux specific step: Give the extensionless binary an explicit operating system title
+      # linux specific step
       - name: Rename Linux binary
         if: matrix.os == 'ubuntu-latest'
         run: |
           mv build/BitSwiss build/BitSwiss-Linux
 
-      # 📦 Multi-platform Asset Dispatch Engine
+      # asset upload
       - name: upload artifacts
         uses: softprops/action-gh-release@v2
         with:
