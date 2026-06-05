@@ -5,66 +5,80 @@ on:
     tags:
       - 'v*'
 
+# 🔐 Grants explicit write access so the automated runner can attach files to your Release dashboard
 permissions:
   contents: write
 
 env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true # Quiet down Node runner deprecation warnings
 
 jobs:
   build:
-    name: Build on ${{ matrix.os }}
+    name: build on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
-      fail-fast: false
+      fail-fast: false # Keeps other OS jobs running even if one hits a snag
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
 
     steps:
-      - name: Checkout Code
+      - name: checkout code
         uses: actions/checkout@v4
 
-      # linux environment Setup
+      # 🐧 Linux Environment Setup
       - name: install linux dependencies
         if: matrix.os == 'ubuntu-latest'
         run: |
           sudo apt-get update
           sudo apt-get install -y cmake libcurl4-openssl-dev libglfw3-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libxkbcommon-dev
 
-      # macOS environment Setup
+      # 🍏 macOS Environment Setup
       - name: install macOS dependencies
         if: matrix.os == 'macos-latest'
         run: |
           brew install cmake curl glfw
 
-      # windows environment Setup
+      # 🪟 Windows Environment Setup
       - name: install windows dependencies
         if: matrix.os == 'windows-latest'
         run: |
           vcpkg install curl:x64-windows glfw3:x64-windows
 
-      # configure CMake (Windows)
+      # configure CMake (Windows native vcpkg integration)
       - name: configure CMake (Windows)
         if: matrix.os == 'windows-latest'
         run: cmake -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake
 
-      # configure CMake (Unix)
+      # configure CMake (Unix systems)
       - name: configure CMake (Unix)
         if: matrix.os != 'windows-latest'
         run: cmake -B build -DCMAKE_BUILD_TYPE=Release
 
-      # build binary
+      # compile binary targets across the build matrix
       - name: build binary
         run: cmake --build build --config Release
 
-      # upload artifacts
+      # 🍏 macOS specific step: Compress the app bundle directory layout into a single flashable archive
+      - name: compress macOS app bundle
+        if: matrix.os == 'macos-latest'
+        run: |
+          cd build
+          zip -r BitSwiss-macOS.zip BitSwiss.app || zip -r BitSwiss-macOS.zip BitSwiss
+
+      # 🐧 Linux specific step: Give the extensionless binary an explicit operating system title
+      - name: Rename Linux binary
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          mv build/BitSwiss build/BitSwiss-Linux
+
+      # 📦 Multi-platform Asset Dispatch Engine
       - name: upload artifacts
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            build/BitSwiss
-            build/BitSwiss.exe
-            build/BitSwiss.app
+            build/BitSwiss-Linux
+            build/BitSwiss-macOS.zip
             build/Release/BitSwiss.exe
+            build/BitSwiss.exe
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
