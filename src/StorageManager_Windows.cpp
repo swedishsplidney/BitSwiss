@@ -26,9 +26,9 @@ std::vector<DriveInfo> StorageManager::GetTargetDrives() {
 
             DriveInfo info;
             info.device_path = drive_path;
-            info.model_name = "Removable Storage Drive"
+            info.model_name = "Removable Storage Drive";
             info.total_bytes = byte_size;
-            info.is_usb = true
+            info.is_usb = true;
 
             target_drives.push_back(info);
         }
