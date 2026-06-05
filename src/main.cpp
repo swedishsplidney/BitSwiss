@@ -232,11 +232,80 @@ int main(int, char**) {
                 final_bar_color = ImGui::GetStyle().Colors[ImGuiCol_PlotHistogram];
             }
 
+            // determine contrast text color only when bar underneath
+            ImVec4 text_over_bar_color = ImVec4(1.0f, 1.0f, 1.0f, 1.0f); // white
+
+            if (is_overloaded) {
+                text_over_bar_color = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
+                // when overloaded red, white is good for visibility
+            }
+            else if (current_theme_idx == THEME_DARK_WIN95) {
+                text_over_bar_color = ImVec4(1.0f, 1.0f, 0.0f, 1.0f);
+                // yellow
+            }
+            else if (current_theme_idx == THEME_CLASSIC_WIN95) {
+                text_over_bar_color = ImVec4(1.0f, 1.0f, 0.0f, 1.0f);
+                // yellow
+            }
+            else if (current_theme_idx == THEME_FALLOUT_GREEN) {
+                text_over_bar_color = ImVec4(0.0f, 0.0f, 0.0f, 1.0f);
+                // black
+            }
+            else if (current_theme_idx == THEME_FALLOUT_PURPLE) {
+                text_over_bar_color = ImVec4(0.0f, 0.0f, 0.0f, 1.0f);
+                // black
+            }
+
+            // get layout coordinates and sizes
+            ImVec2 bar_pos = ImGui::GetCursorScreenPos();
+            ImVec2 bar_size = ImVec2(ImGui::GetContentRegionAvail().x, 22.0f);
+
+            // render progress bar empty
             ImGui::PushStyleColor(ImGuiCol_PlotHistogram, final_bar_color);
-
-            ImGui::ProgressBar(allocation_fraction, ImVec2(-1.0f, 0.0f), progress_buf);
-
+            ImGui::ProgressBar(allocation_fraction, bar_size, "");
             ImGui::PopStyleColor(1);
+
+            // calculate pixel split boundary
+            float split_x = bar_pos.x + (bar_size.x * allocation_fraction);
+
+            // dynamic left alignment math
+            float padding_x = ImGui::GetStyle().ItemSpacing.x;
+            float text_left_default = bar_pos.x + padding_x;
+
+            ImVec2 text_size = ImGui::CalcTextSize(progress_buf);
+            float max_text_x = (bar_pos.x + bar_size.x) - text_size.x - padding_x;
+
+            float cushion = 6.0f;
+
+            float text_x = text_left_default;
+            if (split_x > text_left_default - cushion) {
+                text_x = split_x + cushion;
+                if (text_x > max_text_x) {
+                    text_x = max_text_x; // lock to max
+                }
+            }
+
+            float text_y = bar_pos.y + (bar_size.y - text_size.y) / 2.0f; // vertical center
+            ImVec2 text_pos = ImVec2(text_x, text_y);
+
+            // render on the filled side
+            ImGui::PushClipRect(bar_pos, ImVec2(split_x, bar_pos.y + bar_size.y), true);
+            ImGui::PushStyleColor(ImGuiCol_Text, text_over_bar_color);
+            ImGui::SetCursorScreenPos(text_pos);
+            ImGui::TextUnformatted(progress_buf);
+            ImGui::PopStyleColor(1);
+            ImGui::PopClipRect();
+
+            // render on the un-filled side
+            ImGui::PushClipRect(ImVec2(split_x, bar_pos.y), ImVec2(bar_pos.x + bar_size.x, bar_pos.y + bar_size.y), true);
+            ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetStyle().Colors[ImGuiCol_Text]); // normal theme color
+            ImGui::SetCursorScreenPos(text_pos);
+            ImGui::TextUnformatted(progress_buf);
+            ImGui::PopStyleColor(1);
+            ImGui::PopClipRect();
+
+            // reset cursor layout padding
+            ImGui::SetCursorScreenPos(ImVec2(bar_pos.x, bar_pos.y + bar_size.y + ImGui::GetStyle().ItemSpacing.y));
 
             // section 5: write to drive
             if (dm.IsRunning()) {
