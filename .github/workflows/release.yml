@@ -5,7 +5,7 @@ on:
     tags:
       - 'v*'
 
-# grants explicit write access so the automated runner can attach files to Release dashboard
+# grants write access so the automated runner can attach files to release dashboard
 permissions:
   contents: write
 
@@ -75,10 +75,12 @@ jobs:
       - name: upload artifacts
         uses: softprops/action-gh-release@v2
         with:
+          fail_on_unmatched_files: false
           files: |
             build/BitSwiss-Linux
             build/BitSwiss-macOS.zip
             build/Release/BitSwiss.exe
             build/BitSwiss.exe
+            build/**/BitSwiss.exe
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
