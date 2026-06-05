@@ -244,10 +244,10 @@ int main(int, char**) {
 
             if (ImGui::Button("write to drive", ImVec2(-1.0f, 40.0f))) {
                 // 1. gather all checked packages
-                std::vector<Package> packages_to_deploy;
-                for (const auto& [id, pkg] : pm.GetMasterDB()) {
+                std::vector<Package*> packages_to_deploy;
+                for (auto& [id, pkg] : pm.GetMasterDB()) {
                     if (pkg.is_selected) {
-                        packages_to_deploy.push_back(pkg);
+                        packages_to_deploy.push_back(&pkg);
                     }
                 }
 

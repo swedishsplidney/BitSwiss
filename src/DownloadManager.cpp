@@ -26,8 +26,8 @@ int DownloadManager::ProgressCallback(void *clientp, double dltotal, double dlno
 }
 
 // 3. isolated thread loop
-void DownloadManager::DownloadWorkerTask(Package pkg, std::string destination_directory) {
-    pkg.is_downloading->store(true);
+void DownloadManager::DownloadWorkerTask(Package* pkg, std::string destination_directory) {
+    pkg->is_downloading->store(true);
 
     // create the destination file path
     fs::path archive_dir = fs::path(destination_directory) / "BitSwiss_archive";
@@ -35,33 +35,36 @@ void DownloadManager::DownloadWorkerTask(Package pkg, std::string destination_di
     try {
         // force create the dir inside thread
         if (!fs::exists(archive_dir)) {
-            fs::create_directory(archive_dir);
+            fs::create_directories(archive_dir);
         }
     }
     catch (const fs::filesystem_error& e) {
         std::cerr << "thread OS error: cannot create directory: " << e.what() << std::endl;
-        pkg.is_downloading->store(false);
+        pkg->is_downloading->store(false);
         return;
     }
 
     // reconstruct final target path
-    fs::path target_file = archive_dir / (pkg.id + ".zim");
+    fs::path target_file = archive_dir / (pkg->id + ".zim");
 
     // open stream in binary append/out mode
     std::ofstream output_stream(target_file, std::ios::binary | std::ios::out | std::ios::trunc);
     if (!output_stream.is_open()) {
         std::cerr << "OS permission error. cannot write to: " << target_file << std::endl;
         std::cerr << "check if your drive is mounted as read-only!" << std::endl;
-        pkg.is_downloading->store(false);
+        pkg->is_downloading->store(false);
         return;
     }
 
     CURL* curl_handle = curl_easy_init();
     if (curl_handle) {
-        // mock url endpoint for now, will link later
-        std::string mock_url = "https://www.myinstants.com/media/sounds/never-gonna-give-u-up.mp3";
+        // live url
+        std::string live_url = pkg->download_url;
 
-        curl_easy_setopt(curl_handle, CURLOPT_URL, mock_url.c_str());
+        std::cout << "thread - streaming from URL: " << live_url << std::endl;
+        curl_easy_setopt(curl_handle, CURLOPT_URL, live_url.c_str());
+
+        curl_easy_setopt(curl_handle, CURLOPT_FOLLOWLOCATION, 1L);
 
         // pass custom filesystem stream pointer to callback function
         curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, WriteDataCallback);
@@ -72,7 +75,7 @@ void DownloadManager::DownloadWorkerTask(Package pkg, std::string destination_di
         curl_easy_setopt(curl_handle, CURLOPT_PROGRESSFUNCTION, ProgressCallback);
 
         // pass address of shared progress tracking pointer
-        auto progress_ptr = &pkg.download_progress;
+        auto progress_ptr = &(pkg->download_progress);
         curl_easy_setopt(curl_handle, CURLOPT_PROGRESSDATA, progress_ptr);
 
         // execute block-blocking network retrieval
@@ -81,7 +84,17 @@ void DownloadManager::DownloadWorkerTask(Package pkg, std::string destination_di
         if (res != CURLE_OK) {
             std::cerr << "curl thread error " << curl_easy_strerror(res) << std::endl;
         } else {
-            pkg.is_completed->store(true);
+            // check what HTTP code the server returned
+            long response_code = 0;
+            curl_easy_getinfo(curl_handle, CURLINFO_RESPONSE_CODE, &response_code);
+            std::cout << "server Response Code for " << pkg->id
+                      << ": HTTP " << response_code << std::endl;
+
+            if (response_code >= 400) {
+                std::cerr << "-> error: server rejected the request or file doesn't exist!" << std::endl;
+            } else {
+                pkg->is_completed->store(true);
+            }
         }
 
         curl_easy_cleanup(curl_handle);
@@ -89,14 +102,14 @@ void DownloadManager::DownloadWorkerTask(Package pkg, std::string destination_di
 
     output_stream.flush();
     output_stream.close();
-    pkg.is_downloading->store(false);
+    pkg->is_downloading->store(false);
 }
 
-void DownloadManager::StartDownloadPool(const std::vector<Package>& selected_packages, const std::string& target_mount_path) {
+void DownloadManager::StartDownloadPool(const std::vector<Package*>& selected_packages, const std::string& target_mount_path) {
     JoinAll(); // ensure old pools are cleaned up
     is_running = true;
 
-    for (const auto& pkg : selected_packages) {
+    for (Package* pkg : selected_packages) {
         // spawn a brand new OS thread for each individual package download
         worker_threads.push_back(std::thread(DownloadWorkerTask, pkg, target_mount_path));
     }
