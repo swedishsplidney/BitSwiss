@@ -239,27 +239,32 @@ int main(int, char**) {
             ImGui::PopStyleColor(1);
 
             // section 5: write to drive
-            bool disable_btn = drives.empty() || is_overloaded || total_selected_bytes == 0;
-            if (disable_btn) ImGui::BeginDisabled();
+            if (dm.IsRunning()) {
+                ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.75f, 0.10f, 0.15f, 1.0f));
+                ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.90f, 0.20f, 0.25f, 1.0f));
+                ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.05f, 0.05f, 0.05f, 1.0f));
 
-            if (ImGui::Button("write to drive", ImVec2(-1.0f, 40.0f))) {
-                // 1. gather all checked packages
-                std::vector<Package*> packages_to_deploy;
-                for (auto& [id, pkg] : pm.GetMasterDB()) {
-                    if (pkg.is_selected) {
-                        packages_to_deploy.push_back(&pkg);
-                    }
+                if (ImGui::Button("cancel all downloads", ImVec2(-1.0f, 40.0f))) {
+                    std::cout << "canceled: stopping all downloads..." << std::endl;
+                    dm.CancelPool();
                 }
-
-                // 2. safely get the mount target string path
-                std::string active_target_mount = drives[selected_drive_idx].device_path;
-
-                // 3. actual download stuff
-                std::cout << "launching concurrent download pool to " << active_target_mount << std::endl;
-                dm.StartDownloadPool(packages_to_deploy, active_target_mount);
+                ImGui::PopStyleColor(3);
             }
+            else {
+                bool disable_btn = drives.empty() || is_overloaded || total_selected_bytes == 0;
+                if (disable_btn) ImGui::BeginDisabled();
 
-            if (disable_btn) ImGui::EndDisabled();
+                if (ImGui::Button("write to drive", ImVec2(-1.0f, 40.0f))) {
+                    std::vector<Package*> packages_to_deploy;
+                    for (auto& [id, pkg] : pm.GetMasterDB()) {
+                        if (pkg.is_selected) packages_to_deploy.push_back(&pkg);
+                    }
+                    std::string active_target_mount = drives[selected_drive_idx].device_path;
+                    std::cout << "launching concurrent download pool to " << active_target_mount << std::endl;
+                    dm.StartDownloadPool(packages_to_deploy, active_target_mount);
+                }
+                if (disable_btn) ImGui::EndDisabled();
+            }
 
             ImGui::End();
         }
