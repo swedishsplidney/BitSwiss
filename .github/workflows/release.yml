@@ -1,0 +1,41 @@
+name: build prebuilt binaries
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    name: Build on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+
+    steps:
+      - name: checkout code
+        uses: actions/checkout@v4
+
+      - name: install Linux dependencies
+        if: matrix.os == 'ubuntu-latest'
+        run: brew install curl glfw
+
+      - name: install macOS dependencies
+        if: matrix.os == 'macos-latest'
+        run: brew install curl glfw
+
+      - name: configure CMake
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release
+
+      - name: build binary
+        run: cmake --build build --config Release
+
+      - name: upload artifacts
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            build/BitSwiss*
+            build/Release/BitSwiss
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
