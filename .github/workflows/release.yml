@@ -10,20 +10,32 @@ jobs:
     name: Build on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
 
     steps:
-      - name: checkout code
+      - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: install Linux dependencies
+      # linux environment Setup
+      - name: install linux dependencies
         if: matrix.os == 'ubuntu-latest'
-        run: brew install curl glfw
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake libcurl4-openssl-dev libglfw3-dev
 
+      # macOS environment Setup
       - name: install macOS dependencies
         if: matrix.os == 'macos-latest'
-        run: brew install curl glfw
+        run: |
+          brew install cmake curl glfw
+
+      # windows environment Setup (VCPKG for easy libcurl management)
+      - name: install windows dependencies
+        if: matrix.os == 'windows-latest'
+        run: |
+          vcpkg install curl:x64-windows glfw3:x64-windows
 
       - name: configure CMake
         run: cmake -B build -DCMAKE_BUILD_TYPE=Release
@@ -35,7 +47,9 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            build/BitSwiss*
-            build/Release/BitSwiss
+            build/BitSwiss
+            build/BitSwiss.exe
+            build/BitSwiss.app
+            build/Release/BitSwiss.exe
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
