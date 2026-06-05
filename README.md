@@ -5,7 +5,7 @@
         _  /_/ /_  / / /_ ____/ /__ |/ |/ /_  / _(__  )_(__  ) 
         /_____/ /_/  \__/ /____/ ____/|__/ /_/  /____/ /____/
                                  
-                      the multi-platform offline archiver for removable drives.
+                    the multi-platform offline archiver for removable drives.
 ```
 
 ![C++](https://img.shields.io/badge/c++-%2300599C.svg?style=for-the-badge&logo=c%2B%2B&logoColor=white)
