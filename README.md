@@ -1,4 +1,12 @@
-# **BitSwiss**
+```
+        __________________________         _____               
+        ___  __ )__(_)_  /__  ___/__      ____(_)______________
+        __  __  |_  /_  __/____ \__ | /| / /_  /__  ___/_  ___/
+        _  /_/ /_  / / /_ ____/ /__ |/ |/ /_  / _(__  )_(__  ) 
+        /_____/ /_/  \__/ /____/ ____/|__/ /_/  /____/ /____/
+                                 
+                      the multi-platform offline archiver for removable drives.
+```
 
 ![C++](https://img.shields.io/badge/c++-%2300599C.svg?style=for-the-badge&logo=c%2B%2B&logoColor=white)
 ![CMake](https://img.shields.io/badge/CMake-%23008FBA.svg?style=for-the-badge&logo=cmake&logoColor=white)
@@ -8,10 +16,54 @@
 ![Windows](https://img.shields.io/badge/Windows-0078D6?style=for-the-badge&logo=windows&logoColor=white)
 ![macOS](https://img.shields.io/badge/mac%20os-000000?style=for-the-badge&logo=macos&logoColor=F0F0F0)
 
-a lightweight, cross-platform, open source C++/Dear ImGui utility to curate, download, and provision massive offline archives.
+a lightweight, cross-platform, open source C++/Dear ImGui utility to curate, download, and provision massive offline archives onto removable media, easily creating removable, digital "swiss army knives".
+
+![terminal purple demo image](assets/images/purple_demo.png)
 
 this tool allows users to select from a massive ledger of distinct historical, scientific and technical archives,
 and have them automatically be downloaded onto any removable storage device.
+
+---
+   
+## how it works
+
+```
+    source (offline ZIM files)
+           |   (wikipedia, stackoverflow, etc.)
+           V
++----------+-------------------------------------+
+|        [ ] BitSwiss core - multi-threaded sync |
+|                                                |
+|   +--> [reader thread 1] ----+                 |
+|   |    (parser 1)            |    concurrent   |
+|   +--> [reader thread 2] ----+    processing   |
+|   |    (parser 2)            |                 |
+|   +--> [reader thread N] ----+                 |
+|        (parser N)            |                 |
++------------------------------+-----------------+
+           |                   |
+           | [optimized data]  | [native runtimes]
+           V                   V
++----------+--------+   +------+---------+
+|  offline archive  | + |   native apps  |
+| (.zim + resources)|   | (linux/win/mac)|
++----------+--------+   +------+---------+
+           |                   |
+           +---------+---------+
+                     |
+                     V
+             target (portable media)
+       +---------------------------------+
+       |         [===usb drive===]       |
+       | 📂 BitSwiss_archive             |
+       |  ├── data (.zim archives)       |
+       |  ├── BitSwiss-Linux             |
+       |  ├── BitSwiss.exe (windows)     |
+       |  └── BitSwiss.app (macOS)       |
+       +---------------------------------+
+```
+
+BitSwiss reads raw, highly compressed ZIM files (like full offline dumps of wikipedia) and uses multi-threaded parsing engines to process the data concurrently. it then packages the archives alongside native, standalone executables (available for linux, windows, and macOS) directly onto your removable storage, giving you a massive offline knowledge base that runs on any computer.
 
 ---
 
