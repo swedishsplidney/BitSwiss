@@ -70,6 +70,13 @@ int main(int, char**) {
         {
             ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 1.0f, 1.0f));
 
+            // center and size window
+            ImVec2 target_size = ImVec2(950.0f, 650.0f);
+            ImVec2 center_pos = ImVec2((1280.0f - target_size.x) * 0.5f, (720.0f - target_size.y ) * 0.5f);
+
+            ImGui::SetNextWindowPos(center_pos, ImGuiCond_FirstUseEver);
+            ImGui::SetNextWindowSize(target_size, ImGuiCond_FirstUseEver);
+
             ImGui::Begin("BitSwiss generator control panel");
 
             ImGui::PopStyleColor();
@@ -147,24 +154,25 @@ int main(int, char**) {
             ImGui::Separator();
 
             // section 2: preconfigured profiles
-            ImGui::Text("2. preconfigured profiles");
-            ImGui::Spacing();
+            if (ImGui::CollapsingHeader("2. preconfigured profiles")) {
+                ImGui::Spacing();
 
-            // renders custom layout select blocks
-            for (const auto& profile : pm.GetProfiles()) {
-                if (ImGui::Button(profile.name.c_str(), ImVec2(240.0f, 0.0f))) {
-                    // drop current select array modifications
-                    for (auto& [id, pkg] : pm.GetMasterDB()) pkg.is_selected = false;
+                // renders custom layout select blocks
+                for (const auto& profile : pm.GetProfiles()) {
+                    if (ImGui::Button(profile.name.c_str(), ImVec2(240.0f, 0.0f))) {
+                        // drop current select array modifications
+                        for (auto& [id, pkg] : pm.GetMasterDB()) pkg.is_selected = false;
 
-                    // map the configuration profile items back to the master definitions
-                    for (const auto& id : profile.package_ids) {
-                        if (pm.GetMasterDB().find(id) != pm.GetMasterDB().end()) {
-                            pm.GetMasterDB()[id].is_selected = true;
+                        // map the configuration profile items back to the master definitions
+                        for (const auto& id : profile.package_ids) {
+                            if (pm.GetMasterDB().find(id) != pm.GetMasterDB().end()) {
+                                pm.GetMasterDB()[id].is_selected = true;
+                            }
                         }
                     }
+                    ImGui::SameLine();
+                    ImGui::TextDisabled("- %s", profile.description.c_str());
                 }
-                ImGui::SameLine();
-                ImGui::TextDisabled("- %s", profile.description.c_str());
             }
 
             ImGui::Separator();
