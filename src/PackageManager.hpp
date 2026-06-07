@@ -2,7 +2,6 @@
 #include <string>
 #include <vector>
 #include <map>
-#include <cstdint>
 #include <iostream>
 #include <future>
 #include <chrono>
@@ -12,7 +11,6 @@
 #include <atomic>
 #include <memory>
 #include <thread>
-#include <mutex>
 
 // core data structure
 struct Package {

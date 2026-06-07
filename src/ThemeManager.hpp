@@ -1,8 +1,6 @@
 #pragma once
 #include <imgui.h>
 #include <imgui_internal.h>
-#include <string>
-#include <sstream>
 
 enum ThemeType {
     THEME_DARK_WIN95 = 0,
