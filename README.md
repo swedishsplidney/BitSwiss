@@ -67,6 +67,15 @@ BitSwiss reads raw, highly compressed ZIM files (like full offline dumps of wiki
 
 ---
 
+## usage
+
+* **run the app:** download the binary from the **releases** page. pay attention, there might be specific directions for certain releases or operating systems.
+* **select device:** if it doesn't automatically detect a device, or you have multiple, choose the device you want. if it is not showing up, make sure that it is mounted and editable.
+* **select packages:** choose what packages you want to download, wether thats preconfigured ones or manual selection. it is also reccomended to get a reader too!
+* **hit the button:** now just hit the big button at the bottom and let her rip! if you messed up and need to cancel, don't worry, just hit the same button again.
+
+---
+
 ## system architecture
 
 the application decouples data definitions from user configuration management to guarantee mathematically sound allocation and zero-copy memory overhead
