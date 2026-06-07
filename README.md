@@ -18,7 +18,7 @@
 
 a lightweight, cross-platform, open source C++/Dear ImGui utility to curate, download, and provision massive offline archives onto removable media, easily creating removable, digital "swiss army knives" that can be used anywhere, on any (desktop) computer.
 
-![terminal purple demo gif](assets/images/demo_gif.gif)
+![terminal purple demo gif](assets/images/purple_demo_gif.gif)
 
 this tool allows users to select from a massive ledger of distinct historical, scientific and technical archives,
 and have them automatically be downloaded onto any removable storage device.
