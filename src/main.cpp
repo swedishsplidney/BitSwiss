@@ -54,7 +54,6 @@ int main(int, char**) {
     ImGui_ImplOpenGL3_Init(glsl_version);
 
     // our state
-    bool show_demo_window = true;
     ImVec4 clear_color = ImVec4(0.15f, 0.16f, 0.21f, 1.00f); // bg
 
     // main loop
