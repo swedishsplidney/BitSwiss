@@ -93,7 +93,7 @@ jobs:
       - name: upload artifacts
         uses: softprops/action-gh-release@v2
         with:
-          fail_on_unmatched_files: true
+          fail_on_unmatched_files: false
           files: |
             build/BitSwiss-${{ github.ref_name }}-linux-x64
             build/BitSwiss-${{ github.ref_name }}-macOS.zip
