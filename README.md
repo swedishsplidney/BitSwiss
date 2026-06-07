@@ -79,19 +79,30 @@ the application decouples data definitions from user configuration management to
 
 ## contents and datasets
 
-the program currently coordinates a comprehensive knowledge and information ledger across multiple domains:
+the program currently coordinates a comprehensive (over 600gb) knowledge and information ledger across multiple domains:
 
 the data includes but is not limited to:
 * **the Wikipedia spectrum:** features three distinct fully searchable file sizes (full with pictures, text only, headers and introductions only) containing every Wikipedia entry.
 * **the stackexchange matrix:** integrates the entirety of Stack Overflow alongside niche engineering, technology, science, math, literature, art, and more sister forums.
 * **massive public domain literature packages:** houses the entirety of Project Gutenberg which includes many texts from the Library of Congress, and thousands of other public domain ebooks. users can choose from the entire collection  or from specific collections.
 * **practical hardware and repair:** features the entire comprehensive iFixit repair database that can be used to repair and understand thousands of different devices.
+* **documentation:** included is the whole devdocs archive, featuring fully detailed archives for many scripting languages, libraries, workflows, and more.
+* **textboooks and educational materials:** included in the list of available packages is the entire libretext archive, with many categories and thousands of different books and texts.
+* **medical information libraries:** houses the entire medlineplus library (made by the NIH), which contains a massive amount of health and first aid information.
+* **all of wiktionary:** a dictionary containing over 1,000,000 entries in almost every language known to man
+* **educational courses:** this list has more than just educational texts, with khanacademy, freecodecamp, and crashcourse, it also has fully working step by step courses.
+* **NASA's astronomy picture of the day** view all of NASA's astronomy pictures of the day from 1995 to the present, with expert-written explanations!
 
 there are also multiple preconfigured datasets including:
-* **small storage tailored set:** includes only the most necessary information including wikipedia headers, can fit on a 16gb drive.
-* **medium storage tailored set:** includes all of wikipedia (without pictures), all of iFixit, and more. fits on a 64gb drive.
-* **large storage tailored set:** includes all of wikipedia (without pictures), iFixit, Gutenberg medical, technological and science collections, and a handful of stackexchange archives.
-* **CHUNGUS data set:** includes every single distinct package. very large.
+* **16gb tailored set:** includes only the most necessary information including wikipedia headers, can fit on a 16gb drive.
+* **32gb tailored set:** includes slightly more information, without too much bloat to fit on your average thumb drive
+* **64gb tailored set:** includes all of wikipedia and wiktionary (without pictures), all of iFixit, freecodecamp, multiple devdocs, and more. fits on a 64gb drive.
+* **128gb tailored set:** includes all of wikipedia and wiktionary (without pictures), iFixit, medlineplus, every libretexts collection, medlineplus, crashcourse, nasa apod, and a handful of stackexchange archives.
+* **CHUNGUS data set:** includes every single package. very large (over 600gb!!!).
+* **coding and software engineering set:** contains almost everything you need to learn to code and lookup documentation fully offline
+* **computer science and graphics set:** nearly every single devdoc package and other computer science package
+* **scholarly data set:** for the people who want to get really smart, containing all of the gutenberg library, every libretexts sector, crashcourse, wikipedia, it truly feels like you could get multiple doctorates from this one.
+* **the stargazer data set:** contains all things space, along with wikipedia. for if you really like stars (or work at NASA)
 
 ---
 
@@ -133,6 +144,25 @@ cmake --build .
 ```bash
 ./bitswiss
 ```
+
+---
+
+## gallery
+
+windows 95 (dark):
+![win95 dark demo](/assets/images/dark_demo.png)
+
+windows 95 (classic):
+![win95 light demo](/assets/images/light_demo.png)
+
+terminal green:
+![terminal green](/assets/images/green_demo.png)
+
+terminal purple:
+![terminal purple](/assets/images/purple_demo.png)
+
+modern dark:
+![modern dark](/assets/images/modern_demo.png)
 
 ---
 
