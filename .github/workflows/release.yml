@@ -52,7 +52,12 @@ jobs:
       # configure CMake (Unix systems)
       - name: configure CMake (Unix)
         if: matrix.os != 'windows-latest'
-        run: cmake -B build -DCMAKE_BUILD_TYPE=Release
+        run: |
+          if [ "${{ matrix.os }}" = "macos-latest" ]; then
+            cmake -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_OSX_ARCHITECTURES="x86_64;arm64"
+          else
+            cmake -B build -DCMAKE_BUILD_TYPE=Release
+          fi
 
       # compile binary targets across the build matrix
       - name: build binary
