@@ -42,12 +42,12 @@ jobs:
       - name: install windows dependencies
         if: matrix.os == 'windows-latest'
         run: |
-          vcpkg install curl:x64-windows glfw3:x64-windows
+          vcpkg install curl:x64-windows-static glfw3:x64-windows-static
 
       # configure CMake (Windows native vcpkg integration)
       - name: configure CMake (Windows)
         if: matrix.os == 'windows-latest'
-        run: cmake -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release -DVCPKG_TARGET_TRIPLET=x64-windows-static -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake
 
       # configure CMake (Unix systems)
       - name: configure CMake (Unix)
@@ -78,15 +78,7 @@ jobs:
         run: |
           if (Test-Path "dist") { Remove-Item -Recurse -Force "dist" }
           mkdir dist
-          
           Copy-Item "build/Release/BitSwiss.exe" -Destination "dist/BitSwiss.exe" -Force
-          
-          if (Test-Path "C:/vcpkg/installed/x64-windows/bin/libcurl.dll") {
-            Copy-Item "C:/vcpkg/installed/x64-windows/bin/libcurl.dll" -Destination "dist/libcurl.dll" -Force
-          } else {
-            Get-ChildItem -Path "build/" -Filter "libcurl.dll" -Recurse | Select-Object -First 1 | Copy-Item -Destination "dist/libcurl.dll" -Force
-          }
-          
           Compress-Archive -Path dist/* -DestinationPath build/BitSwiss-${{ github.ref_name }}-win64.zip -Force
 
       # asset upload
