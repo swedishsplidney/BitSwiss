@@ -266,8 +266,8 @@ private:
         master_db["crashcourse"]          = {"crashcourse", "crashcourse (full)", "full archive of all of crashcourse", "https://download.kiwix.org/zim/other/crashcourse_en_all_2026-05.zim"};
         master_db["minecraft"]            = {"minecraft", "minecraft wiki (full)", "archive of the full minecraft wiki", "https://download.kiwix.org/zim/other/minecraftwiki_en_all_maxi_2026-05.zim"};
         master_db["wiktionary"]           = {"wiktionary", "wiktionary (full)", "full archive of wikitionary", "https://download.kiwix.org/zim/wiktionary/wiktionary_en_all_nopic_2026-05.zim"};
-        master_db["nasa_apod"]            = {"nasa_apod", "NASA astronomy picture of the day (1995-2026)", "offline archive of NASA's astronomy pictures of the day", "https://download.kiwix.org/zim/zimit/apod.nasa.gov_en_all_2026-05.zim"};
-        master_db["medlineplus"]          = {"medlineplus", "NIH's medlineplus library", "archive of the medlineplus library, with tons of health information", "https://download.kiwix.org/zim/zimit/medlineplus.gov_en_all_2025-01.zim"};
+        master_db["nasa_apod"]            = {"nasa_apod", "NASA astronomy picture of the day", "offline archive of NASA's astronomy pictures of the day (1995-2026)", "https://download.kiwix.org/zim/zimit/apod.nasa.gov_en_all_2026-05.zim"};
+        master_db["medlineplus"]          = {"medlineplus", "medlineplus library", "archive of the NIH's medlineplus library, with tons of health information", "https://download.kiwix.org/zim/zimit/medlineplus.gov_en_all_2025-01.zim"};
     }
 
     void InitializeProfiles() {
