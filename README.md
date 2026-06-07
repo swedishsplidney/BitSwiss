@@ -86,7 +86,7 @@ the data includes but is not limited to:
 * **the stackexchange matrix:** integrates the entirety of Stack Overflow alongside niche engineering, technology, science, math, literature, art, and more sister forums.
 * **massive public domain literature packages:** houses the entirety of Project Gutenberg which includes many texts from the Library of Congress, and thousands of other public domain ebooks. users can choose from the entire collection  or from specific collections.
 * **practical hardware and repair:** features the entire comprehensive iFixit repair database that can be used to repair and understand thousands of different devices.
-* **documentation:** included is the whole devdocs archive, featuring fully detailed archives for many scripting languages, libraries, workflows, and more.
+* **technical documentation:** included is the whole devdocs archive, featuring fully detailed archives for many scripting languages, libraries, workflows, and more.
 * **textboooks and educational materials:** included in the list of available packages is the entire libretext archive, with many categories and thousands of different books and texts.
 * **medical information libraries:** houses the entire medlineplus library (made by the NIH), which contains a massive amount of health and first aid information.
 * **all of wiktionary:** a dictionary containing over 1,000,000 entries in almost every language known to man
