@@ -1,11 +1,11 @@
 ```
-        __________________________         _____               
-        ___  __ )__(_)_  /__  ___/__      ____(_)______________
-        __  __  |_  /_  __/____ \__ | /| / /_  /__  ___/_  ___/
-        _  /_/ /_  / / /_ ____/ /__ |/ |/ /_  / _(__  )_(__  ) 
-        /_____/ /_/  \__/ /____/ ____/|__/ /_/  /____/ /____/
+            __________________________         _____               
+            ___  __ )__(_)_  /__  ___/__      ____(_)______________
+            __  __  |_  /_  __/____ \__ | /| / /_  /__  ___/_  ___/
+            _  /_/ /_  / / /_ ____/ /__ |/ |/ /_  / _(__  )_(__  ) 
+            /_____/ /_/  \__/ /____/ ____/|__/ /_/  /____/ /____/
                                  
-                      the multi-platform offline archiver for removable drives.
+                        the multi-platform offline archiver for removable drives.
 ```
 
 ![C++](https://img.shields.io/badge/c++-%2300599C.svg?style=for-the-badge&logo=c%2B%2B&logoColor=white)
@@ -16,7 +16,7 @@
 ![Windows](https://img.shields.io/badge/Windows-0078D6?style=for-the-badge&logo=windows&logoColor=white)
 ![macOS](https://img.shields.io/badge/mac%20os-000000?style=for-the-badge&logo=macos&logoColor=F0F0F0)
 
-a lightweight, cross-platform, open source C++/Dear ImGui utility to curate, download, and provision massive offline archives onto removable media, easily creating removable, digital "swiss army knives".
+a lightweight, cross-platform, open source C++/Dear ImGui utility to curate, download, and provision massive offline archives onto removable media, easily creating removable, digital "swiss army knives" that can be used anywhere, on any (desktop) computer.
 
 ![terminal purple demo image](assets/images/purple_demo.png)
 
@@ -55,7 +55,7 @@ and have them automatically be downloaded onto any removable storage device.
              target (portable media)
        +---------------------------------+
        |         [===usb drive===]       |
-       | 📂 BitSwiss_archive             |
+       |    BitSwiss_archive             |
        |  ├── data (.zim archives)       |
        |  ├── BitSwiss-Linux             |
        |  ├── BitSwiss.exe (windows)     |
