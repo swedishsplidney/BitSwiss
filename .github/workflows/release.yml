@@ -76,21 +76,24 @@ jobs:
         if: matrix.os == 'windows-latest'
         shell: pwsh
         run: |
+          if (Test-Path "dist") { Remove-Item -Recurse -Force "dist" }
           mkdir dist
-          Copy-Item "build/Release/BitSwiss.exe" -Destination "dist/"
           
-          Get-ChildItem -Path "build/" -Filter "*.dll" -Recurse | Copy-Item -Destination "dist/" -Force
+          Copy-Item "build/Release/BitSwiss.exe" -Destination "dist/BitSwiss.exe" -Force
+          
           if (Test-Path "C:/vcpkg/installed/x64-windows/bin/libcurl.dll") {
-            Copy-Item "C:/vcpkg/installed/x64-windows/bin/libcurl.dll" -Destination "dist/" -Force
+            Copy-Item "C:/vcpkg/installed/x64-windows/bin/libcurl.dll" -Destination "dist/libcurl.dll" -Force
+          } else {
+            Get-ChildItem -Path "build/" -Filter "libcurl.dll" -Recurse | Select-Object -First 1 | Copy-Item -Destination "dist/libcurl.dll" -Force
           }
           
-          Compress-Archive -Path dist/* -DestinationPath build/BitSwiss-${{ github.ref_name }}-win64.zip
+          Compress-Archive -Path dist/* -DestinationPath build/BitSwiss-${{ github.ref_name }}-win64.zip -Force
 
       # asset upload
       - name: upload artifacts
         uses: softprops/action-gh-release@v2
         with:
-          fail_on_unmatched_files: false
+          fail_on_unmatched_files: true
           files: |
             build/BitSwiss-${{ github.ref_name }}-linux-x64
             build/BitSwiss-${{ github.ref_name }}-macOS.zip
