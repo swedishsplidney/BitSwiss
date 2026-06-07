@@ -7,7 +7,6 @@
 #include "DownloadManager.hpp"
 #include "StorageManager.hpp"
 #include "PackageManager.hpp"
-#include "StorageWriter.hpp"
 #include "ThemeManager.hpp"
 
 static void glfw_error_callback(int error, const char* description) {
@@ -83,7 +82,6 @@ int main(int, char**) {
             static int current_theme_idx = THEME_DARK_WIN95;
             static bool initialization_frame = true;
             static PackageManager pm;
-            static StorageManager sm;
             static DownloadManager dm;
             static int selected_drive_idx = 0;
             static bool sizes_synced = false;
@@ -133,7 +131,7 @@ int main(int, char**) {
 
             // section 1: storage vector target
             ImGui::Text("1. target destination vector");
-            std::vector<std::string> drive_previews;
+            static std::vector<std::string> drive_previews;
             for (const auto& d : drives) {
                 double gb = (double)d.total_bytes / (1024.0 * 1024.0 * 1024.0);
                 drive_previews.push_back(d.device_path + " (" + d.model_name + ") [" + std::to_string((int)gb) + " GB]");
@@ -336,7 +334,65 @@ int main(int, char**) {
             ImGui::SetCursorScreenPos(ImVec2(bar_pos.x, bar_pos.y + bar_size.y + ImGui::GetStyle().ItemSpacing.y));
 
             // section 5: write to drive
-            if (dm.IsRunning()) {
+            uint64_t selected_count = 0;
+            uint64_t completed_count = 0;
+
+            for (const auto& [id, pkg] : pm.GetMasterDB()) {
+                if (pkg.is_selected) {
+                    selected_count++;
+                    if (pkg.is_completed->load()) {
+                        completed_count++;
+                    }
+                }
+            }
+
+            // determine if completed or not
+            bool batch_completed = false;
+            static bool cancellation_requested = false;
+            static uint64_t last_selected_count = 0;
+
+            // reset state if selection changes
+            if (selected_count != last_selected_count) {
+                batch_completed = false;
+                cancellation_requested = false;
+
+                // clear other completion flags
+                for (auto& [id, pkg] : pm.GetMasterDB()) {
+                    pkg.is_completed->store(false);
+                    pkg.download_progress->store(0.0);
+                }
+
+                last_selected_count = selected_count;
+            }
+
+            if (selected_count > 0 && completed_count == selected_count && dm.IsRunning()) {
+                dm.CancelPool();
+            }
+
+            if (!dm.IsRunning()) {
+                cancellation_requested = false;
+            }
+
+            // lock completed state when complete
+            if (selected_count > 0 && completed_count == selected_count && !dm.IsRunning()) {
+                // only mark true if something actually was downloaded
+                if (total_selected_bytes > 0) {
+                    batch_completed = true;
+                }
+            }
+
+            if (batch_completed) {
+                // render a non-clickable button
+                ImGui::BeginDisabled();
+                ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.8f, 0.3f, 1.0f));
+                ImGui::PushStyleColor(ImGuiCol_TextDisabled, ImVec4(1.0f, 1.0f, 1.0f, 1.0f));
+
+                ImGui::Button("completed!", ImVec2(-1.0f, 40.0f));
+
+                ImGui::PopStyleColor(2);
+                ImGui::EndDisabled();
+            }
+            else if (dm.IsRunning() && !cancellation_requested) {
                 ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.75f, 0.10f, 0.15f, 1.0f));
                 ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.90f, 0.20f, 0.25f, 1.0f));
                 ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.05f, 0.05f, 0.05f, 1.0f));
@@ -344,6 +400,8 @@ int main(int, char**) {
                 if (ImGui::Button("cancel all downloads", ImVec2(-1.0f, 40.0f))) {
                     std::cout << "canceled: stopping all downloads..." << std::endl;
                     dm.CancelPool();
+                    batch_completed = false;
+                    cancellation_requested = true;
                 }
                 ImGui::PopStyleColor(3);
             }
@@ -357,6 +415,9 @@ int main(int, char**) {
                 std::string button_text = is_syncing ? "syncing file extensions..." : "write to drive";
 
                 if (ImGui::Button(button_text.c_str(), ImVec2(-1.0f, 40.0f))) {
+                    cancellation_requested = false;
+                    batch_completed = false;
+
                     std::vector<Package*> packages_to_deploy;
 
                     // add true filenames from URL
