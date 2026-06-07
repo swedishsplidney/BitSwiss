@@ -63,12 +63,6 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     message(STATUS "configuring build for Linux")
 endif()
 
-# force static linking for windows
-if(WIN32)
-    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static-libgcc -static-libstdc++ -static")
-    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded")
-endif()
-
 add_executable(${PROJECT_NAME} ${SOURCES})
 
 # add imgui source files manually
