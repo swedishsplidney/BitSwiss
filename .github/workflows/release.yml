@@ -63,13 +63,28 @@ jobs:
         if: matrix.os == 'macos-latest'
         run: |
           cd build
-          zip -r BitSwiss-macOS.zip BitSwiss.app || zip -r BitSwiss-macOS.zip BitSwiss
+          zip -r BitSwiss-${{ github.ref_name }}-macOS.zip BitSwiss.app || zip -r BitSwiss-${{ github.ref_name }}-macOS.zip BitSwiss
 
       # linux specific step
       - name: Rename Linux binary
         if: matrix.os == 'ubuntu-latest'
         run: |
-          mv build/BitSwiss build/BitSwiss-Linux
+          mv build/BitSwiss build/BitSwiss-${{ github.ref_name }}-linux-x64
+
+      # windows specific step
+      - name: package windows zip with depends
+        if: matrix.os == 'windows-latest'
+        shell: pwsh
+        run: |
+          mkdir dist
+          Copy-Item "build/Release/BitSwiss.exe" -Destination "dist/"
+          
+          Get-ChildItem -Path "build/" -Filter "*.dll" -Recurse | Copy-Item -Destination "dist/" -Force
+          if (Test-Path "C:/vcpkg/installed/x64-windows/bin/libcurl.dll") {
+            Copy-Item "C:/vcpkg/installed/x64-windows/bin/libcurl.dll" -Destination "dist/" -Force
+          }
+          
+          Compress-Archive -Path dist/* -DestinationPath build/BitSwiss-${{ github.ref_name }}-win64.zip
 
       # asset upload
       - name: upload artifacts
@@ -77,10 +92,8 @@ jobs:
         with:
           fail_on_unmatched_files: false
           files: |
-            build/BitSwiss-Linux
-            build/BitSwiss-macOS.zip
-            build/Release/BitSwiss.exe
-            build/BitSwiss.exe
-            build/**/BitSwiss.exe
+            build/BitSwiss-${{ github.ref_name }}-linux-x64
+            build/BitSwiss-${{ github.ref_name }}-macOS.zip
+            build/BitSwiss-${{ github.ref_name }}-win64.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
