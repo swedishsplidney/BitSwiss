@@ -15,6 +15,11 @@ static void glfw_error_callback(int error, const char* description) {
 
 int main(int, char**) {
     glfwSetErrorCallback(glfw_error_callback);
+
+#if defined(__linux__) || defined(__freeBSD__)
+    glfwInitHint(GLFW_PLATFORM, GLFW_ANY_PLATFORM);
+#endif
+
     if (!glfwInit()) return 1;
 
     // decide gl/glsl versions
