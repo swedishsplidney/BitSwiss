@@ -17,7 +17,14 @@ int main(int, char**) {
     glfwSetErrorCallback(glfw_error_callback);
 
 #if defined(__linux__) || defined(__freeBSD__)
+    // attempt wayland if possible
     glfwInitHint(GLFW_PLATFORM, GLFW_ANY_PLATFORM);
+
+    // if cant load wayland, trigger x11/xwayland
+    if (!glfwPlatformSupported(GLFW_PLATFORM_WAYLAND)) {
+        std::cout << "native wayland libs missing or unsupported. triggering xwayland fallback..." << std::endl;
+        glfwInitHint(GLFW_PLATFORM, GLFW_PLATFORM_X11);
+    }
 #endif
 
     if (!glfwInit()) return 1;
